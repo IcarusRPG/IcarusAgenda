@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { Footer } from './Footer';
 import { useTenant } from '../../hooks/useTenant';
 import { ICARUS_BRAND } from '../../config/constants';
@@ -18,15 +18,12 @@ function Sidebar() {
         />
       </div>
       <nav className="space-y-2 text-sm">
-        <a className="block rounded px-3 py-2 text-slate-700 hover:bg-slate-100" href="/app">
+        <Link className="block rounded px-3 py-2 text-slate-700 hover:bg-slate-100" to="/app">
           Dashboard
-        </a>
-        <a className="block rounded px-3 py-2 text-slate-700 hover:bg-slate-100" href="#">
-          Agendamentos
-        </a>
-        <a className="block rounded px-3 py-2 text-slate-700 hover:bg-slate-100" href="#">
-          Serviços
-        </a>
+        </Link>
+        <Link className="block rounded px-3 py-2 text-slate-700 hover:bg-slate-100" to="/app/companies">
+          Empresas
+        </Link>
       </nav>
     </aside>
   );

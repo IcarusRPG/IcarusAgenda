@@ -156,8 +156,17 @@ App padrão: `http://localhost:5173`
 
 - `GET /api/health` → saúde da API
 - `POST /api/auth/login` → login real com JWT
+- `GET /api/companies` → lista empresas no escopo do tenant autenticado
+- `POST /api/companies` → cria empresa (admin/owner)
+- `GET /api/companies/:id` → busca empresa por ID (com isolamento por tenant)
+- `PATCH /api/companies/:id` → atualiza empresa (com isolamento por tenant)
+- `GET /api/companies/slug/:slug` → busca empresa por slug
 - `GET /api/companies/:companySlug/public-profile` → perfil público da empresa
 - `GET /api/companies/current` → dados da empresa autenticada via JWT
+- `GET /api/public/companies/:slug` → dados públicos da empresa por slug
+- `GET /api/public/companies/:slug/services` → serviços ativos da empresa
+- `GET /api/public/companies/:slug/availability?serviceId=...&date=YYYY-MM-DD` → horários disponíveis
+- `POST /api/public/appointments` → cria agendamento público (status=pending, source=public)
 
 ## Constantes globais importantes
 

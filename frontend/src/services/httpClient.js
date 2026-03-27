@@ -3,7 +3,7 @@ import { getStoredToken } from './authStorage';
 
 export async function httpClient(path, options = {}) {
   const { authToken, headers: customHeaders, ...fetchOptions } = options;
-  const token = authToken || getStoredToken();
+  const token = authToken === undefined ? getStoredToken() : authToken;
 
   const headers = {
     'Content-Type': 'application/json',
