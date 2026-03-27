@@ -1,30 +1,64 @@
 import { ICARUS_BRAND } from '../config/constants.js';
+import { getCompanyById, getCompanyPublicProfileBySlug } from '../modules/companies/companyService.js';
 
-export function getPublicCompanyProfile(req, res) {
-  const { companySlug } = req.params;
-
-  res.json({
-    slug: companySlug,
-    companyName: 'Empresa Exemplo',
-    logoUrl: 'https://dummyimage.com/180x60/0f172a/ffffff&text=Empresa',
-    bookingEnabled: true,
-    footerBrand: {
-      name: ICARUS_BRAND.name,
-      logoUrl: ICARUS_BRAND.defaultLogoUrl,
-    },
-  });
+function isDbNotConfigured(error) {
+  return error.message.includes('DATABASE_URL não configurada');
 }
 
-export function getCurrentCompany(req, res) {
-  if (!req.tenant?.companyId) {
-    return res.status(400).json({
-      message: 'Header x-company-id é obrigatório para contexto de tenant.',
-    });
-  }
+export async function getPublicCompanyProfile(req, res, next) {
+  try {
+    const { companySlug } = req.params;
+    const profile = await getCompanyPublicProfileBySlug(companySlug);
 
-  return res.json({
-    id: req.tenant.companyId,
-    name: 'Empresa do Tenant',
-    slug: 'empresa-do-tenant',
-  });
+    if (!profile) {
+      return res.status(404).json({
+        message: 'Empresa não encontrada para o slug informado.',
+      });
+    }
+
+    return res.json({
+      ...profile,
+      bookingEnabled: true,
+      footerBrand: {
+        name: ICARUS_BRAND.name,
+        logoUrl: ICARUS_BRAND.defaultLogoUrl,
+      },
+    });
+  } catch (error) {
+    if (isDbNotConfigured(error)) {
+      return res.status(503).json({
+        message: 'Banco de dados não configurado. Defina DATABASE_URL para habilitar este endpoint.',
+      });
+    }
+
+    return next(error);
+  }
+}
+
+export async function getCurrentCompany(req, res, next) {
+  try {
+    if (!req.tenant?.companyId) {
+      return res.status(400).json({
+        message: 'Token de autenticação inválido para contexto de tenant.',
+      });
+    }
+
+    const company = await getCompanyById(req.tenant.companyId);
+
+    if (!company) {
+      return res.status(404).json({
+        message: 'Empresa não encontrada para o tenant informado.',
+      });
+    }
+
+    return res.json(company);
+  } catch (error) {
+    if (isDbNotConfigured(error)) {
+      return res.status(503).json({
+        message: 'Banco de dados não configurado. Defina DATABASE_URL para habilitar este endpoint.',
+      });
+    }
+
+    return next(error);
+  }
 }

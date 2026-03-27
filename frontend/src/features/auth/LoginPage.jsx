@@ -5,27 +5,55 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { useAuth } from '../../hooks/useAuth';
 import { useTenant } from '../../hooks/useTenant';
+import { getCurrentCompany, login } from '../../services/authService';
 
 export function LoginPage() {
   const navigate = useNavigate();
   const { signIn } = useAuth();
   const { setTenant } = useTenant();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setErrorMessage('');
+    setIsSubmitting(true);
 
-    // Estrutura inicial: autenticação real será implementada posteriormente.
-    signIn({ id: 'usr_1', name: 'Usuário Icarus', email });
-    setTenant({
-      id: 'cmp_1',
-      slug: 'empresa-demo',
-      name: 'Empresa Demo',
-      logoUrl: '',
-    });
+    try {
+      const authResponse = await login({ email, password });
+      const company = await getCurrentCompany(authResponse.token);
 
-    navigate('/app');
+      const nextUser = {
+        id: authResponse.user_id,
+        companyId: authResponse.company_id,
+        name: authResponse.name,
+        role: authResponse.role,
+      };
+
+      const nextTenant = {
+        id: company.id,
+        slug: company.slug,
+        name: company.name,
+        logoUrl: company.logo_url || authResponse.company?.logoUrl || '',
+        timezone: company.timezone || authResponse.company?.timezone || '',
+      };
+
+      signIn({
+        nextToken: authResponse.token,
+        nextUser,
+        nextTenant,
+      });
+
+      setTenant(nextTenant);
+      navigate('/app');
+    } catch (error) {
+      setErrorMessage(error.message || 'Não foi possível autenticar.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -61,8 +89,10 @@ export function LoginPage() {
             />
           </div>
 
-          <Button type="submit" className="w-full">
-            Entrar
+          {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
+
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? 'Entrando...' : 'Entrar'}
           </Button>
         </form>
       </div>

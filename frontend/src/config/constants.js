@@ -9,3 +9,9 @@ export const APP_ROUTES = {
   appRoot: '/app',
   publicBooking: '/book/:companySlug',
 };
+
+export const AUTH_STORAGE_KEYS = {
+  token: 'icarus_agenda.auth.token',
+  user: 'icarus_agenda.auth.user',
+  tenant: 'icarus_agenda.auth.tenant',
+};

@@ -6,3 +6,9 @@ export async function login(payload) {
     body: JSON.stringify(payload),
   });
 }
+
+export async function getCurrentCompany(authToken) {
+  return httpClient('/companies/current', {
+    authToken,
+  });
+}

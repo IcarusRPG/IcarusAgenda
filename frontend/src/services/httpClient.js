@@ -1,12 +1,19 @@
 import { env } from '../config/env';
+import { getStoredToken } from './authStorage';
 
 export async function httpClient(path, options = {}) {
+  const { authToken, headers: customHeaders, ...fetchOptions } = options;
+  const token = authToken || getStoredToken();
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(customHeaders || {}),
+  };
+
   const response = await fetch(`${env.apiBaseUrl}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-    ...options,
+    ...fetchOptions,
+    headers,
   });
 
   if (!response.ok) {

@@ -1,18 +1,29 @@
 import { createContext, useContext, useMemo, useState } from 'react';
+import { clearSession, getStoredToken, getStoredUser, persistSession } from '../services/authStorage';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(() => getStoredToken());
+  const [user, setUser] = useState(() => getStoredUser());
 
   const value = useMemo(
     () => ({
+      token,
       user,
-      isAuthenticated: Boolean(user),
-      signIn: (nextUser) => setUser(nextUser),
-      signOut: () => setUser(null),
+      isAuthenticated: Boolean(token && user),
+      signIn: ({ nextToken, nextUser, nextTenant }) => {
+        persistSession({ token: nextToken, user: nextUser, tenant: nextTenant });
+        setToken(nextToken);
+        setUser(nextUser);
+      },
+      signOut: () => {
+        clearSession();
+        setToken(null);
+        setUser(null);
+      },
     }),
-    [user],
+    [token, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

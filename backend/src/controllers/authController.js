@@ -1,16 +1,30 @@
-export function loginController(req, res) {
-  const { email } = req.body;
+import { authenticateWithEmailAndPassword } from '../modules/auth/authService.js';
 
-  res.json({
-    message: 'Estrutura de login criada. Implementar autenticação real nas próximas etapas.',
-    user: {
-      id: 'usr_1',
-      email,
-    },
-    company: {
-      id: 'cmp_1',
-      name: 'Empresa Demo',
-      slug: 'empresa-demo',
-    },
-  });
+function isInfraConfigError(error) {
+  return (
+    error.message.includes('DATABASE_URL não configurada') ||
+    error.message.includes('JWT_SECRET não configurado')
+  );
+}
+
+export async function loginController(req, res, next) {
+  try {
+    const authResult = await authenticateWithEmailAndPassword(req.body);
+
+    if (!authResult) {
+      return res.status(401).json({
+        message: 'Credenciais inválidas.',
+      });
+    }
+
+    return res.json(authResult);
+  } catch (error) {
+    if (isInfraConfigError(error)) {
+      return res.status(503).json({
+        message: error.message,
+      });
+    }
+
+    return next(error);
+  }
 }

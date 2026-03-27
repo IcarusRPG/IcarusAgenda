@@ -1,9 +1,10 @@
 import { createContext, useContext, useMemo, useState } from 'react';
+import { getStoredTenant } from '../services/authStorage';
 
 const TenantContext = createContext(null);
 
 export function TenantProvider({ children }) {
-  const [tenant, setTenant] = useState(null);
+  const [tenant, setTenant] = useState(() => getStoredTenant());
 
   const value = useMemo(
     () => ({

@@ -1,7 +1,9 @@
 import { useTenant } from '../../hooks/useTenant';
+import { useAuth } from '../../hooks/useAuth';
 
 export function DashboardPage() {
   const { tenant, companyId } = useTenant();
+  const { user } = useAuth();
 
   return (
     <section className="space-y-3">
@@ -13,6 +15,12 @@ export function DashboardPage() {
         </p>
         <p>
           <strong>company_id:</strong> {companyId || '-'}
+        </p>
+        <p>
+          <strong>Usuário:</strong> {user?.name || '-'}
+        </p>
+        <p>
+          <strong>Role:</strong> {user?.role || '-'}
         </p>
       </div>
     </section>

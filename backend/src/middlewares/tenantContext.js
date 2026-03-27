@@ -1,10 +1,8 @@
-import { TENANT_HEADER } from '../config/constants.js';
-
 export function tenantContext(req, _res, next) {
-  const companyId = req.header(TENANT_HEADER) || null;
-
   req.tenant = {
-    companyId,
+    companyId: req.auth?.companyId || null,
+    userId: req.auth?.userId || null,
+    role: req.auth?.role || null,
   };
 
   next();

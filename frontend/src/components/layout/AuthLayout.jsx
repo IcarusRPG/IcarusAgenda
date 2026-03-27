@@ -1,7 +1,9 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { Footer } from './Footer';
 import { useTenant } from '../../hooks/useTenant';
 import { ICARUS_BRAND } from '../../config/constants';
+import { useAuth } from '../../hooks/useAuth';
+import { Button } from '../ui/Button';
 
 function Sidebar() {
   const { tenant } = useTenant();
@@ -31,12 +33,28 @@ function Sidebar() {
 }
 
 function Header() {
-  const { tenant } = useTenant();
+  const navigate = useNavigate();
+  const { tenant, setTenant } = useTenant();
+  const { signOut, user } = useAuth();
+
+  const handleLogout = () => {
+    signOut();
+    setTenant(null);
+    navigate('/login', { replace: true });
+  };
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
-      <strong className="text-slate-800">{tenant?.name || 'Ambiente da Empresa'}</strong>
-      <span className="text-sm text-slate-500">Painel interno</span>
+      <div>
+        <strong className="block text-slate-800">{tenant?.name || 'Ambiente da Empresa'}</strong>
+        <span className="text-xs text-slate-500">{user?.name || 'Usuário autenticado'}</span>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-slate-500">Painel interno</span>
+        <Button variant="ghost" onClick={handleLogout}>
+          Sair
+        </Button>
+      </div>
     </header>
   );
 }

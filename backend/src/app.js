@@ -4,7 +4,6 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { env } from './config/env.js';
 import { apiRouter } from './routes/index.js';
-import { tenantContext } from './middlewares/tenantContext.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 
 export function createApp() {
@@ -15,7 +14,7 @@ export function createApp() {
   app.use(morgan('dev'));
   app.use(express.json());
 
-  app.use('/api', tenantContext, apiRouter);
+  app.use('/api', apiRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
