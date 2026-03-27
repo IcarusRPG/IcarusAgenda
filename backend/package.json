@@ -5,13 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "db:schema": "psql \"$DATABASE_URL\" -f db/schema/001_initial_schema.sql"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.6",
     "express": "^4.21.2",
     "helmet": "^8.0.0",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "pg": "^8.13.1"
   }
 }

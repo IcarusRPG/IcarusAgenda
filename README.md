@@ -31,22 +31,55 @@ Estrutura inicial de um SaaS multiempresa com **frontend React + Vite + Tailwind
 │       ├── App.jsx
 │       └── main.jsx
 └── backend/
+    ├── db/
+    │   ├── schema/             # SQL de criação inicial do banco
+    │   └── migrations/         # Migrations incrementais futuras
     └── src/
         ├── config/             # Configuração de ambiente e constantes
         ├── controllers/        # Controllers HTTP
+        ├── database/           # Cliente PostgreSQL, queries e repositories
         ├── middlewares/        # Middlewares (tenant, erros, etc.)
-        ├── modules/            # Módulos de domínio (auth, companies, health)
+        ├── modules/            # Módulos de domínio
         ├── routes/             # Rotas Express
-        ├── services/           # Serviços compartilhados
-        ├── utils/              # Helpers/utilitários
         ├── app.js
         └── server.js
 ```
+
+## Modelo de dados (PostgreSQL)
+
+Schema inicial em: `backend/db/schema/001_initial_schema.sql`
+
+Entidades do MVP:
+
+- `companies`
+- `users`
+- `company_settings`
+- `services`
+- `availability`
+- `appointments`
+
+### Relacionamentos
+
+- `companies (1) -> (N) users`
+- `companies (1) -> (1) company_settings`
+- `companies (1) -> (N) services`
+- `companies (1) -> (N) availability`
+- `companies (1) -> (N) appointments`
+- `services (1) -> (N) appointments` com integridade tenant-safe via FK composta (`company_id`, `service_id`)
+
+### Regras de integridade importantes
+
+- `companies.slug` é único globalmente (suporte a `/book/:companySlug`).
+- `users` possuem unicidade por empresa (`company_id`, `email`).
+- Todas as tabelas operacionais carregam `company_id`.
+- Índices para consultas por tenant e agenda (`company_id`, `scheduled_start`, `status`).
+- `updated_at` é atualizado automaticamente por triggers.
 
 ## Requisitos
 
 - Node.js 20+
 - npm 10+
+- PostgreSQL 14+
 
 ## Executar localmente
 
@@ -59,6 +92,12 @@ npm run dev
 ```
 
 API padrão: `http://localhost:3333`
+
+Aplicar schema SQL no PostgreSQL:
+
+```bash
+npm run db:schema
+```
 
 ### 2) Frontend
 
@@ -94,8 +133,7 @@ Logo padrão Icarus Agenda (frontend e backend):
 ## Próximos passos sugeridos
 
 - Implementar autenticação real (JWT + refresh token)
-- Conectar PostgreSQL (Prisma/Knex/TypeORM)
+- Adicionar migrations versionadas e seed inicial por tenant
 - Implementar RBAC por empresa
 - Implementar modelo de agenda/serviços/profissionais
 - Evoluir booking público com disponibilidade real
-
