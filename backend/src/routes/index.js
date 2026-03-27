@@ -2,11 +2,13 @@ import { Router } from 'express';
 import { healthRoutes } from './healthRoutes.js';
 import { authRoutes } from './authRoutes.js';
 import { companyRoutes } from './companyRoutes.js';
+import { publicRoutes } from './publicRoutes.js';
 
 const apiRouter = Router();
 
 apiRouter.use('/health', healthRoutes);
 apiRouter.use('/auth', authRoutes);
 apiRouter.use('/companies', companyRoutes);
+apiRouter.use('/public', publicRoutes);
 
 export { apiRouter };

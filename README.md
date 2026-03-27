@@ -163,6 +163,10 @@ App padrão: `http://localhost:5173`
 - `GET /api/companies/slug/:slug` → busca empresa por slug
 - `GET /api/companies/:companySlug/public-profile` → perfil público da empresa
 - `GET /api/companies/current` → dados da empresa autenticada via JWT
+- `GET /api/public/companies/:slug` → dados públicos da empresa por slug
+- `GET /api/public/companies/:slug/services` → serviços ativos da empresa
+- `GET /api/public/companies/:slug/availability?serviceId=...&date=YYYY-MM-DD` → horários disponíveis
+- `POST /api/public/appointments` → cria agendamento público (status=pending, source=public)
 
 ## Constantes globais importantes
 
