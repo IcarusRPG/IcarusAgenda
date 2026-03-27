@@ -1,7 +1,7 @@
 import { findCompanyBySlug } from '../../database/repositories/companyRepository.js';
 import { listActiveServicesByCompanyId, findActiveServiceByCompanyAndId } from '../../database/repositories/serviceRepository.js';
 import { listActiveAvailabilityByCompanyAndDay } from '../../database/repositories/availabilityRepository.js';
-import { createPublicAppointmentRecord, hasOverlappingAppointment } from '../appointments/appointmentService.js';
+import { createPublicAppointmentRecord, getCompanyAppointmentsInRange, hasOverlappingAppointment } from '../appointments/appointmentService.js';
 
 function toIsoDateUtc(dateStr, timeStr) {
   const shortTime = String(timeStr || '').slice(0, 5);
@@ -24,6 +24,22 @@ function getWeekdayFromDate(dateStr) {
 
 function validateDateInput(dateStr) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(dateStr || ''));
+}
+
+function hasOverlapInMemory(appointments, rangeStartIso, rangeEndIso) {
+  const start = new Date(rangeStartIso);
+  const end = new Date(rangeEndIso);
+
+  return appointments.some((appointment) => {
+    if (!['pending', 'confirmed'].includes(appointment.status)) {
+      return false;
+    }
+
+    const appointmentStart = new Date(appointment.scheduled_start);
+    const appointmentEnd = new Date(appointment.scheduled_end);
+
+    return appointmentStart < end && appointmentEnd > start;
+  });
 }
 
 export async function getPublicCompanyBySlug(slug) {
@@ -86,6 +102,17 @@ export async function getPublicAvailabilityByCompanySlug({ slug, serviceId, date
   }
 
   const rules = await listActiveAvailabilityByCompanyAndDay(company.id, dayOfWeek);
+  const dayStart = `${date}T00:00:00.000Z`;
+  const nextDate = new Date(`${date}T00:00:00.000Z`);
+  nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+  const dayEnd = `${nextDate.toISOString().slice(0, 10)}T00:00:00.000Z`;
+
+  const appointments = await getCompanyAppointmentsInRange({
+    companyId: company.id,
+    rangeStart: dayStart,
+    rangeEnd: dayEnd,
+  });
+
   const slots = [];
 
   for (const rule of rules) {
@@ -98,12 +125,7 @@ export async function getPublicAvailabilityByCompanySlug({ slug, serviceId, date
       const scheduledStart = new Date(cursor);
       const scheduledEnd = addMinutes(scheduledStart, service.duration_minutes);
 
-      // eslint-disable-next-line no-await-in-loop
-      const overlaps = await hasOverlappingAppointment({
-        companyId: company.id,
-        rangeStart: scheduledStart.toISOString(),
-        rangeEnd: scheduledEnd.toISOString(),
-      });
+      const overlaps = hasOverlapInMemory(appointments, scheduledStart.toISOString(), scheduledEnd.toISOString());
 
       if (!overlaps) {
         slots.push({
@@ -202,7 +224,7 @@ export async function createPublicAppointmentFromBooking(payload) {
     throw error;
   }
 
-  return createPublicAppointmentRecord({
+  const created = await createPublicAppointmentRecord({
     companyId: company.id,
     serviceId: service.id,
     customerName: String(customerName).trim(),
@@ -211,4 +233,12 @@ export async function createPublicAppointmentFromBooking(payload) {
     scheduledEnd: endDate.toISOString(),
     notes: payload.notes || null,
   });
+
+  if (!created) {
+    const error = new Error('Horário selecionado não está mais disponível.');
+    error.status = 409;
+    throw error;
+  }
+
+  return created;
 }

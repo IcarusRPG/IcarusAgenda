@@ -7,6 +7,7 @@ import { PublicBookingPage } from '../../features/public-booking/PublicBookingPa
 import { useAuth } from '../../hooks/useAuth';
 import { CompaniesListPage } from '../../features/companies/CompaniesListPage';
 import { CompanyFormPage } from '../../features/companies/CompanyFormPage';
+import { AppointmentsPage } from '../../features/appointments/AppointmentsPage';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -35,6 +36,7 @@ export function AppRouter() {
         }
       >
         <Route index element={<DashboardPage />} />
+        <Route path="appointments" element={<AppointmentsPage />} />
         <Route path="companies" element={<CompaniesListPage />} />
         <Route path="companies/new" element={<CompanyFormPage />} />
         <Route path="companies/:companyId/edit" element={<CompanyFormPage />} />

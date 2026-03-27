@@ -21,6 +21,9 @@ function Sidebar() {
         <Link className="block rounded px-3 py-2 text-slate-700 hover:bg-slate-100" to="/app">
           Dashboard
         </Link>
+        <Link className="block rounded px-3 py-2 text-slate-700 hover:bg-slate-100" to="/app/appointments">
+          Agenda
+        </Link>
         <Link className="block rounded px-3 py-2 text-slate-700 hover:bg-slate-100" to="/app/companies">
           Empresas
         </Link>

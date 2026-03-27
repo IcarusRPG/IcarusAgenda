@@ -163,6 +163,9 @@ App padrão: `http://localhost:5173`
 - `GET /api/companies/slug/:slug` → busca empresa por slug
 - `GET /api/companies/:companySlug/public-profile` → perfil público da empresa
 - `GET /api/companies/current` → dados da empresa autenticada via JWT
+- `GET /api/appointments?date=YYYY-MM-DD&view=day|week` → agenda interna da empresa autenticada
+- `PATCH /api/appointments/:id/status` → altera status do agendamento
+- `PATCH /api/appointments/:id` → edita dados do agendamento
 - `GET /api/public/companies/:slug` → dados públicos da empresa por slug
 - `GET /api/public/companies/:slug/services` → serviços ativos da empresa
 - `GET /api/public/companies/:slug/availability?serviceId=...&date=YYYY-MM-DD` → horários disponíveis
