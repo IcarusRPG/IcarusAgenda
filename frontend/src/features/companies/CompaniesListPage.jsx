@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { ICARUS_BRAND } from '../../config/constants';
 import { listCompanies } from '../../services/companyService';
+import { Alert } from '../../components/ui/Alert';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { LoadingState } from '../../components/ui/LoadingState';
 
 export function CompaniesListPage() {
   const [items, setItems] = useState([]);
@@ -51,8 +54,20 @@ export function CompaniesListPage() {
         </Link>
       </div>
 
-      {isLoading ? <p className="text-sm text-slate-500">Carregando empresas...</p> : null}
-      {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
+      {isLoading ? <LoadingState label="Carregando empresas..." /> : null}
+      {errorMessage ? <Alert type="error">{errorMessage}</Alert> : null}
+
+      {!isLoading && items.length === 0 ? (
+        <EmptyState
+          title="Nenhuma empresa encontrada"
+          description="Você pode criar uma empresa para começar a configurar branding e agenda."
+          action={
+            <Link to="/app/companies/new">
+              <Button>Criar empresa</Button>
+            </Link>
+          }
+        />
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((company) => (

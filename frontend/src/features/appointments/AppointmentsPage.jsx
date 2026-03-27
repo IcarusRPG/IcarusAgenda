@@ -5,6 +5,9 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { useTenant } from '../../hooks/useTenant';
 import { getAppointments, updateAppointment, updateAppointmentStatus } from '../../services/appointmentService';
+import { Alert } from '../../components/ui/Alert';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { LoadingState } from '../../components/ui/LoadingState';
 
 function todayInput() {
   return new Date().toISOString().slice(0, 10);
@@ -73,19 +76,19 @@ export function AppointmentsPage() {
   };
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Agenda da empresa</h1>
-        <p className="text-sm text-slate-600">Visualize por dia/semana e gerencie confirmações, cancelamentos e edições.</p>
+        <h1 className="text-3xl font-semibold text-slate-900">Agenda da empresa</h1>
+        <p className="mt-1 text-sm text-slate-600">Visualize por dia/semana e gerencie confirmações, cancelamentos e edições.</p>
       </div>
 
       <CalendarToolbar date={date} view={view} onDateChange={setDate} onViewChange={setView} />
 
-      {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
-      {successMessage ? <p className="text-sm text-green-600">{successMessage}</p> : null}
+      {errorMessage ? <Alert type="error">{errorMessage}</Alert> : null}
+      {successMessage ? <Alert type="success">{successMessage}</Alert> : null}
 
       {editing ? (
-        <form onSubmit={handleSaveEdit} className="space-y-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+        <form onSubmit={handleSaveEdit} className="space-y-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
           <h2 className="font-medium text-slate-900">Editar agendamento</h2>
           <Input
             value={editing.customer_name}
@@ -125,7 +128,14 @@ export function AppointmentsPage() {
         </form>
       ) : null}
 
-      {isLoading ? <p className="text-sm text-slate-500">Carregando agenda...</p> : null}
+      {isLoading ? <LoadingState label="Carregando agenda..." /> : null}
+
+      {!isLoading && items.length === 0 ? (
+        <EmptyState
+          title="Nenhum agendamento encontrado"
+          description="Não há registros para o período selecionado. Tente outro dia/semana ou compartilhe seu link de booking público."
+        />
+      ) : null}
 
       <div className="grid gap-3">
         {items.map((appointment) => (

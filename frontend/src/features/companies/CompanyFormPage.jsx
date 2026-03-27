@@ -4,6 +4,8 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { useTenant } from '../../hooks/useTenant';
 import { createCompany, getCompanyById, updateCompany } from '../../services/companyService';
+import { Alert } from '../../components/ui/Alert';
+import { LoadingState } from '../../components/ui/LoadingState';
 
 const STATUS_OPTIONS = ['active', 'inactive', 'suspended'];
 
@@ -25,6 +27,7 @@ export function CompanyFormPage() {
   const [isLoading, setIsLoading] = useState(isEditMode);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -77,6 +80,7 @@ export function CompanyFormPage() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setErrorMessage('');
+    setSuccessMessage('');
     setIsSubmitting(true);
 
     try {
@@ -96,11 +100,14 @@ export function CompanyFormPage() {
             timezone: updated.timezone,
           };
         });
+
+        setSuccessMessage('Empresa atualizada com sucesso.');
       } else {
         await createCompany(formData);
+        setSuccessMessage('Empresa criada com sucesso.');
       }
 
-      navigate('/app/companies');
+      setTimeout(() => navigate('/app/companies'), 500);
     } catch (error) {
       setErrorMessage(error.message || 'Não foi possível salvar a empresa.');
     } finally {
@@ -109,7 +116,7 @@ export function CompanyFormPage() {
   };
 
   if (isLoading) {
-    return <p className="text-sm text-slate-500">Carregando dados da empresa...</p>;
+    return <LoadingState label="Carregando dados da empresa..." />;
   }
 
   return (
@@ -119,7 +126,8 @@ export function CompanyFormPage() {
         <p className="text-sm text-slate-600">Informe os dados de branding e operação da empresa.</p>
       </div>
 
-      {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
+      {errorMessage ? <Alert type="error">{errorMessage}</Alert> : null}
+      {successMessage ? <Alert type="success">{successMessage}</Alert> : null}
 
       <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <div>

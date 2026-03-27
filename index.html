@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Icarus Agenda — Preview Interativo</title>
+    <style>
+      :root {
+        --bg: #f8fafc;
+        --card: #ffffff;
+        --text: #0f172a;
+        --muted: #64748b;
+        --line: #e2e8f0;
+        --brand: #2563eb;
+        --brand-2: #1d4ed8;
+        --ok: #16a34a;
+        --warn: #b45309;
+        --err: #dc2626;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: Inter, system-ui, Arial, sans-serif; background: var(--bg); color: var(--text); }
+      a { color: inherit; text-decoration: none; }
+      .app { min-height: 100vh; display: flex; flex-direction: column; }
+      .hidden { display: none !important; }
+      .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+      .btn { border: 1px solid transparent; border-radius: 10px; padding: 9px 14px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+      .btn:hover { transform: translateY(-1px); }
+      .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+      .btn-primary { background: var(--brand); color: #fff; }
+      .btn-primary:hover { background: var(--brand-2); }
+      .btn-ghost { background: #fff; border-color: var(--line); color: #334155; }
+      .btn-danger { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+      .input, .select { width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+      .input:focus, .select:focus { outline: 2px solid #bfdbfe; border-color: var(--brand); }
+      .label { display: block; font-size: 13px; color: #475569; margin-bottom: 6px; font-weight: 600; }
+      .alert { border-radius: 10px; border: 1px solid; padding: 10px 12px; font-size: 14px; }
+      .alert-ok { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+      .alert-err { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+      .alert-info { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
+      .loading { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); }
+      .spinner { width: 14px; height: 14px; border: 2px solid #cbd5e1; border-top-color: #334155; border-radius: 999px; animation: spin 1s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .empty { border: 1px dashed #cbd5e1; border-radius: 14px; background: #fff; text-align: center; padding: 30px 18px; color: var(--muted); }
+      .badge { border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700; display: inline-block; }
+      .b-active { background: #dcfce7; color: #166534; }
+      .b-inactive { background: #fef9c3; color: #854d0e; }
+      .b-suspended { background: #fee2e2; color: #991b1b; }
+      .b-pending { background: #ffedd5; color: #9a3412; }
+      .b-confirmed { background: #dbeafe; color: #1e3a8a; }
+      .b-cancelled { background: #e2e8f0; color: #334155; }
+      .b-public { background: #ede9fe; color: #5b21b6; }
+      .b-internal { background: #cffafe; color: #155e75; }
+
+      .auth-shell { flex: 1; display: grid; grid-template-columns: 260px 1fr; }
+      .sidebar { border-right: 1px solid var(--line); background: #fff; padding: 16px; }
+      .side-logo { border: 1px dashed #cbd5e1; border-radius: 12px; padding: 12px; display: flex; justify-content: center; margin-bottom: 16px; }
+      .side-logo img { width: 130px; height: 44px; object-fit: contain; }
+      .nav a { display: block; padding: 10px; border-radius: 8px; color: #334155; font-weight: 600; font-size: 14px; }
+      .nav a.active, .nav a:hover { background: #f1f5f9; }
+
+      .main-col { display: flex; flex-direction: column; min-width: 0; }
+      .header { height: 68px; display: flex; justify-content: space-between; align-items: center; background: #fff; border-bottom: 1px solid var(--line); padding: 0 20px; }
+      .main { flex: 1; padding: 22px; }
+      .footer { border-top: 1px solid var(--line); background: #fff; padding: 10px 14px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 12px; color: var(--muted); }
+      .footer img { height: 24px; }
+
+      .login-wrap { flex: 1; display: grid; place-items: center; padding: 24px; }
+      .login-card { width: 100%; max-width: 420px; }
+      .brand-center { display: flex; justify-content: center; margin-bottom: 14px; }
+      .brand-center img { height: 52px; }
+
+      .hero { border-radius: 16px; background: linear-gradient(120deg, #0f172a, #1e293b); color: #fff; padding: 22px; }
+      .hero img { width: 62px; height: 62px; object-fit: cover; border-radius: 10px; background: #fff; padding: 4px; }
+      .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+      .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+      .stack { display: grid; gap: 12px; }
+      .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+      .between { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+      .appt { border: 1px solid var(--line); border-radius: 12px; background: #fff; padding: 12px; }
+      .slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+      .slot { border: 1px solid #cbd5e1; background: #fff; border-radius: 8px; padding: 8px; font-size: 13px; cursor: pointer; }
+      .slot.active { border-color: var(--brand); background: #eff6ff; color: #1e3a8a; }
+
+      @media (max-width: 980px) {
+        .auth-shell { grid-template-columns: 1fr; }
+        .sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
+        .grid-3 { grid-template-columns: 1fr; }
+        .grid-2 { grid-template-columns: 1fr; }
+        .slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app" class="app"></div>
+
+    <script>
+      /* =========================== constants =========================== */
+      const ICARUS_LOGO = 'https://res.cloudinary.com/dk6okgt0a/image/upload/v1774637295/IcarusAgendaLogo_zhpyop.png';
+      const ROUTES = { login: 'login', dashboard: 'dashboard', companies: 'companies', appointments: 'appointments', booking: 'booking' };
+
+      /* =========================== mockData ============================ */
+      const mockData = {
+        user: { id: 'usr_1', name: 'Patrícia Admin', email: 'admin@icarusagenda.com', role: 'owner' },
+        companies: [
+          { id: 'cmp_vida', name: 'Clínica Vida', slug: 'clinica-vida', timezone: 'America/Sao_Paulo', status: 'active', logo_url: 'https://dummyimage.com/220x80/1e293b/ffffff&text=Cl%C3%ADnica+Vida' },
+          { id: 'cmp_prime', name: 'Barbearia Prime', slug: 'barbearia-prime', timezone: 'America/Sao_Paulo', status: 'active', logo_url: '' },
+          { id: 'cmp_atlas', name: 'Consultoria Atlas', slug: 'consultoria-atlas', timezone: 'America/Sao_Paulo', status: 'inactive', logo_url: 'https://dummyimage.com/220x80/0f766e/ffffff&text=Atlas' }
+        ],
+        services: [
+          { id: 'srv1', company_id: 'cmp_vida', name: 'Consulta Clínica', duration_minutes: 30, status: 'active' },
+          { id: 'srv2', company_id: 'cmp_vida', name: 'Retorno', duration_minutes: 20, status: 'active' },
+          { id: 'srv3', company_id: 'cmp_prime', name: 'Corte Masculino', duration_minutes: 40, status: 'active' },
+          { id: 'srv4', company_id: 'cmp_prime', name: 'Barba Completa', duration_minutes: 30, status: 'active' },
+          { id: 'srv5', company_id: 'cmp_atlas', name: 'Sessão Estratégica', duration_minutes: 60, status: 'active' }
+        ],
+        availability: [
+          { id: 'av1', company_id: 'cmp_vida', day_of_week: 1, start_time: '08:00', end_time: '12:00', slot_interval_minutes: 30, status: 'active' },
+          { id: 'av2', company_id: 'cmp_vida', day_of_week: 3, start_time: '13:00', end_time: '18:00', slot_interval_minutes: 30, status: 'active' },
+          { id: 'av3', company_id: 'cmp_prime', day_of_week: 2, start_time: '09:00', end_time: '19:00', slot_interval_minutes: 30, status: 'active' },
+          { id: 'av4', company_id: 'cmp_prime', day_of_week: 4, start_time: '09:00', end_time: '19:00', slot_interval_minutes: 30, status: 'active' },
+          { id: 'av5', company_id: 'cmp_atlas', day_of_week: 5, start_time: '10:00', end_time: '17:00', slot_interval_minutes: 60, status: 'active' }
+        ],
+        appointments: [
+          { id: 'apt1', company_id: 'cmp_vida', service_id: 'srv1', customer_name: 'Mariana Costa', customer_email: 'mariana@email.com', scheduled_start: '2026-03-30T13:00:00.000Z', scheduled_end: '2026-03-30T13:30:00.000Z', status: 'pending', source: 'public', notes: '' },
+          { id: 'apt2', company_id: 'cmp_vida', service_id: 'srv2', customer_name: 'Rafael Lima', customer_email: 'rafa@email.com', scheduled_start: '2026-03-30T14:00:00.000Z', scheduled_end: '2026-03-30T14:20:00.000Z', status: 'confirmed', source: 'internal', notes: 'Retorno rápido' },
+          { id: 'apt3', company_id: 'cmp_prime', service_id: 'srv3', customer_name: 'Carlos Nunes', customer_email: 'carlos@email.com', scheduled_start: '2026-03-31T15:00:00.000Z', scheduled_end: '2026-03-31T15:40:00.000Z', status: 'pending', source: 'public', notes: '' }
+        ]
+      };
+
+      /* ============================= state ============================= */
+      const state = {
+        auth: { isAuthenticated: false, user: null },
+        route: ROUTES.login,
+        activeCompanyId: 'cmp_vida',
+        companyForm: null,
+        editingAppointmentId: null,
+        appointmentsView: 'day',
+        appointmentsDate: new Date().toISOString().slice(0, 10),
+        booking: { slug: 'clinica-vida', serviceId: '', date: new Date().toISOString().slice(0, 10), slot: '', name: '', email: '' },
+        ui: { loading: false, alert: null }
+      };
+
+      /* ============================= helpers =========================== */
+      const byId = (id) => document.getElementById(id);
+      const uid = (p) => `${p}_${Math.random().toString(36).slice(2, 8)}`;
+      const activeCompany = () => mockData.companies.find((c) => c.id === state.activeCompanyId);
+      const companyLogo = (c) => (c && c.logo_url ? c.logo_url : ICARUS_LOGO);
+      const statusBadge = (s) => `<span class="badge ${s === 'active' ? 'b-active' : s === 'inactive' ? 'b-inactive' : s === 'suspended' ? 'b-suspended' : s === 'confirmed' ? 'b-confirmed' : s === 'cancelled' ? 'b-cancelled' : 'b-pending'}">${s}</span>`;
+      const sourceBadge = (s) => `<span class="badge ${s === 'public' ? 'b-public' : 'b-internal'}">${s}</span>`;
+      const fmt = (iso, tz) => new Date(iso).toLocaleString('pt-BR', { timeZone: tz, hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+      const serviceById = (id) => mockData.services.find((s) => s.id === id);
+      const companyBySlug = (slug) => mockData.companies.find((c) => c.slug === slug);
+
+      function getRange(dateStr, view) {
+        const base = new Date(`${dateStr}T00:00:00.000Z`);
+        if (view === 'week') {
+          const d = (base.getUTCDay() + 6) % 7;
+          const start = new Date(base); start.setUTCDate(start.getUTCDate() - d);
+          const end = new Date(start); end.setUTCDate(end.getUTCDate() + 7);
+          return [start, end];
+        }
+        const end = new Date(base); end.setUTCDate(end.getUTCDate() + 1);
+        return [base, end];
+      }
+
+      function overlaps(companyId, startIso, endIso, ignoreId = null) {
+        return mockData.appointments.some((a) => {
+          if (a.company_id !== companyId || a.id === ignoreId) return false;
+          if (!['pending', 'confirmed'].includes(a.status)) return false;
+          return new Date(a.scheduled_start) < new Date(endIso) && new Date(a.scheduled_end) > new Date(startIso);
+        });
+      }
+
+      function availableSlots(companyId, serviceId, dateStr) {
+        const service = serviceById(serviceId);
+        if (!service) return [];
+        const day = new Date(`${dateStr}T00:00:00.000Z`).getUTCDay();
+        const rules = mockData.availability.filter((a) => a.company_id === companyId && a.day_of_week === day && a.status === 'active');
+        const slots = [];
+        rules.forEach((r) => {
+          const start = new Date(`${dateStr}T${r.start_time}:00.000Z`);
+          const end = new Date(`${dateStr}T${r.end_time}:00.000Z`);
+          for (let c = new Date(start); c.getTime() + service.duration_minutes * 60000 <= end.getTime(); c = new Date(c.getTime() + r.slot_interval_minutes * 60000)) {
+            const s = c.toISOString();
+            const e = new Date(c.getTime() + service.duration_minutes * 60000).toISOString();
+            if (!overlaps(companyId, s, e)) slots.push({ start: s, end: e });
+          }
+        });
+        return slots;
+      }
+
+      function setAlert(type, message) { state.ui.alert = { type, message }; render(); }
+      function clearAlert() { state.ui.alert = null; }
+
+      /* =========================== render functions ==================== */
+      function renderFooter() {
+        return `<footer class="footer"><span>Powered by</span><img src="${ICARUS_LOGO}" alt="Icarus"/></footer>`;
+      }
+
+      function renderAlert() {
+        if (!state.ui.alert) return '';
+        const cls = state.ui.alert.type === 'error' ? 'alert-err' : state.ui.alert.type === 'success' ? 'alert-ok' : 'alert-info';
+        return `<div class="alert ${cls}">${state.ui.alert.message}</div>`;
+      }
+
+      function renderLogin() {
+        return `
+          <div class="login-wrap">
+            <div class="card login-card stack">
+              <div class="brand-center"><img src="${ICARUS_LOGO}" alt="Icarus"></div>
+              <div>
+                <h2 style="margin:0">Entrar no Icarus Agenda</h2>
+                <p style="margin:6px 0 0;color:var(--muted);font-size:14px">Login único da plataforma</p>
+              </div>
+              ${renderAlert()}
+              <form id="loginForm" class="stack">
+                <div><label class="label">E-mail</label><input class="input" name="email" type="email" required value="admin@icarusagenda.com"></div>
+                <div><label class="label">Senha</label><input class="input" name="password" type="password" required value="123456"></div>
+                <button class="btn btn-primary" type="submit">Entrar</button>
+              </form>
+              <small style="color:var(--muted)">Preview local sem backend (estado em memória).</small>
+            </div>
+          </div>
+          ${renderFooter()}
+        `;
+      }
+
+      function renderSidebar() {
+        const c = activeCompany();
+        return `
+          <aside class="sidebar">
+            <div class="side-logo"><img src="${companyLogo(c)}" alt="logo empresa"></div>
+            <nav class="nav stack">
+              <a data-nav="dashboard" class="${state.route === ROUTES.dashboard ? 'active' : ''}" href="#">Dashboard</a>
+              <a data-nav="companies" class="${state.route === ROUTES.companies ? 'active' : ''}" href="#">Empresas</a>
+              <a data-nav="appointments" class="${state.route === ROUTES.appointments ? 'active' : ''}" href="#">Agenda interna</a>
+              <a data-nav="booking" class="${state.route === ROUTES.booking ? 'active' : ''}" href="#">Booking público</a>
+            </nav>
+          </aside>
+        `;
+      }
+
+      function renderHeader() {
+        const c = activeCompany();
+        const options = mockData.companies.map((x) => `<option value="${x.id}" ${x.id === state.activeCompanyId ? 'selected' : ''}>${x.name}</option>`).join('');
+        return `
+          <header class="header">
+            <div><strong>${c.name}</strong><div style="font-size:12px;color:var(--muted)">Tenant ativo</div></div>
+            <div class="row">
+              <select id="activeCompanySelect" class="select" style="min-width:220px">${options}</select>
+              <button id="logoutBtn" class="btn btn-ghost">Sair</button>
+            </div>
+          </header>
+        `;
+      }
+
+      function renderDashboard() {
+        const c = activeCompany();
+        const apps = mockData.appointments.filter((a) => a.company_id === c.id);
+        const pending = apps.filter((a) => a.status === 'pending').length;
+        return `
+          <section class="stack">
+            <div class="hero between">
+              <div>
+                <div style="font-size:12px;color:#cbd5e1;letter-spacing:.08em;text-transform:uppercase">Ambiente autenticado</div>
+                <h1 style="margin:.2rem 0 0">${c.name}</h1>
+                <p style="margin:.4rem 0 0;color:#cbd5e1">Multi-tenant ativo • slug: /book/${c.slug}</p>
+              </div>
+              <img src="${companyLogo(c)}" alt="logo"/>
+            </div>
+            ${renderAlert()}
+            <div class="grid-3">
+              <div class="card"><h3 style="margin-top:0">Agendamentos</h3><div style="font-size:32px;font-weight:800">${apps.length}</div><small style="color:var(--muted)">${pending} pendentes</small></div>
+              <div class="card"><h3 style="margin-top:0">Setup inicial</h3><p style="font-size:14px;color:var(--muted)">1) Crie seu primeiro serviço<br>2) Configure disponibilidade<br>3) Compartilhe seu link</p></div>
+              <div class="card"><h3 style="margin-top:0">Link público</h3><a href="#" data-open-booking="${c.slug}" style="color:var(--brand);font-weight:700">${location.origin}/book/${c.slug}</a></div>
+            </div>
+          </section>
+        `;
+      }
+
+      function renderCompanies() {
+        const cards = mockData.companies.map((c) => `
+          <div class="card stack">
+            <div class="between">
+              <div class="row"><img src="${companyLogo(c)}" style="width:42px;height:42px;border-radius:8px;object-fit:cover"/><div><strong>${c.name}</strong><div style="font-size:12px;color:var(--muted)">/${c.slug}</div></div></div>
+              ${statusBadge(c.status)}
+            </div>
+            <div style="font-size:13px;color:var(--muted)">timezone: ${c.timezone}</div>
+            <div class="row">
+              <button class="btn btn-ghost" data-edit-company="${c.id}">Editar</button>
+              <button class="btn btn-ghost" data-set-active="${c.id}">${c.id === state.activeCompanyId ? 'Ativa' : 'Definir ativa'}</button>
+              <button class="btn btn-ghost" data-toggle-status="${c.id}">Alternar status</button>
+            </div>
+          </div>
+        `).join('');
+
+        const f = state.companyForm || { id: '', name: '', slug: '', timezone: 'America/Sao_Paulo', status: 'active', logo_url: '' };
+        return `
+          <section class="stack">
+            <div class="between"><h2 style="margin:0">Gestão de empresas (CRUD em memória)</h2><button id="newCompanyBtn" class="btn btn-primary">Nova empresa</button></div>
+            ${renderAlert()}
+            <div class="grid-2">
+              <div class="stack">${cards}</div>
+              <div class="card stack">
+                <h3 style="margin:0">${f.id ? 'Editar empresa' : 'Criar empresa'}</h3>
+                <form id="companyForm" class="stack">
+                  <input type="hidden" name="id" value="${f.id || ''}">
+                  <div><label class="label">Nome</label><input class="input" name="name" required value="${f.name || ''}"></div>
+                  <div><label class="label">Slug</label><input class="input" name="slug" required value="${f.slug || ''}"></div>
+                  <div><label class="label">Timezone</label><input class="input" name="timezone" required value="${f.timezone || ''}"></div>
+                  <div><label class="label">Status</label><select class="select" name="status"><option ${f.status === 'active' ? 'selected':''}>active</option><option ${f.status === 'inactive' ? 'selected':''}>inactive</option><option ${f.status === 'suspended' ? 'selected':''}>suspended</option></select></div>
+                  <div><label class="label">Logo URL</label><input class="input" name="logo_url" value="${f.logo_url || ''}"></div>
+                  <div class="row"><button class="btn btn-primary" type="submit">Salvar</button><button id="clearCompanyForm" class="btn btn-ghost" type="button">Limpar</button></div>
+                </form>
+              </div>
+            </div>
+          </section>
+        `;
+      }
+
+      function renderAppointments() {
+        const c = activeCompany();
+        const [start, end] = getRange(state.appointmentsDate, state.appointmentsView);
+        const list = mockData.appointments.filter((a) => a.company_id === c.id && new Date(a.scheduled_start) >= start && new Date(a.scheduled_start) < end)
+          .sort((a, b) => new Date(a.scheduled_start) - new Date(b.scheduled_start));
+
+        const edit = mockData.appointments.find((a) => a.id === state.editingAppointmentId);
+        const items = list.length
+          ? list.map((a) => {
+              const s = serviceById(a.service_id);
+              return `<div class="appt stack">
+                <div class="between"><strong>${a.customer_name}</strong>${statusBadge(a.status)}</div>
+                <div style="font-size:13px;color:var(--muted)">${s ? s.name : a.service_id} • ${fmt(a.scheduled_start, c.timezone)} - ${fmt(a.scheduled_end, c.timezone)}</div>
+                <div class="row">${sourceBadge(a.source)}<button class="btn btn-ghost" data-apt-confirm="${a.id}">Confirmar</button><button class="btn btn-danger" data-apt-cancel="${a.id}">Cancelar</button><button class="btn btn-ghost" data-apt-edit="${a.id}">Editar</button></div>
+              </div>`;
+            }).join('')
+          : `<div class="empty"><h3 style="margin:0 0 8px">Sem agendamentos</h3><p style="margin:0">Não há registros para o período selecionado.</p></div>`;
+
+        return `
+          <section class="stack">
+            <div class="between"><h2 style="margin:0">Agenda interna</h2>
+              <div class="row">
+                <button class="btn ${state.appointmentsView === 'day' ? 'btn-primary' : 'btn-ghost'}" data-view="day">Dia</button>
+                <button class="btn ${state.appointmentsView === 'week' ? 'btn-primary' : 'btn-ghost'}" data-view="week">Semana</button>
+                <input id="appointmentsDate" class="input" type="date" value="${state.appointmentsDate}" style="width:165px"/>
+              </div>
+            </div>
+            ${renderAlert()}
+            ${edit ? `<form id="appointmentEditForm" class="card stack"><h3 style="margin:0">Editar agendamento</h3>
+              <input type="hidden" name="id" value="${edit.id}">
+              <div><label class="label">Cliente</label><input class="input" name="customer_name" value="${edit.customer_name}" required></div>
+              <div><label class="label">E-mail</label><input class="input" type="email" name="customer_email" value="${edit.customer_email || ''}" required></div>
+              <div><label class="label">Início (ISO)</label><input class="input" name="scheduled_start" value="${edit.scheduled_start}" required></div>
+              <div><label class="label">Fim (ISO)</label><input class="input" name="scheduled_end" value="${edit.scheduled_end}" required></div>
+              <div class="row"><button class="btn btn-primary" type="submit">Salvar</button><button id="cancelEditApt" class="btn btn-ghost" type="button">Cancelar</button></div>
+            </form>` : ''}
+            ${items}
+          </section>
+        `;
+      }
+
+      function renderBooking() {
+        const slug = state.booking.slug;
+        const company = companyBySlug(slug);
+
+        if (!company) {
+          return `<section class="stack">${renderAlert()}<div class="empty">Empresa não encontrada para slug informado.</div></section>`;
+        }
+
+        const services = mockData.services.filter((s) => s.company_id === company.id && s.status === 'active');
+        if (!state.booking.serviceId && services.length) state.booking.serviceId = services[0].id;
+        const slots = availableSlots(company.id, state.booking.serviceId, state.booking.date);
+
+        return `
+          <section class="stack">
+            <div class="hero between">
+              <div><div style="font-size:12px;color:#cbd5e1;text-transform:uppercase">Fluxo público separado</div><h2 style="margin:5px 0 0">Booking • ${company.name}</h2><p style="margin:6px 0 0;color:#cbd5e1">Rota simulada: /book/${company.slug}</p></div>
+              <img src="${companyLogo(company)}" alt="logo"/>
+            </div>
+            ${renderAlert()}
+            <div class="card stack">
+              <div class="row"><label class="label" style="margin:0">Slug público</label><select id="bookingSlug" class="select" style="max-width:260px">${mockData.companies.map((c) => `<option value="${c.slug}" ${c.slug===slug?'selected':''}>${c.slug}</option>`).join('')}</select></div>
+              <div class="grid-2">
+                <div class="stack">
+                  <div><label class="label">Serviço</label><select id="bookingService" class="select">${services.map((s) => `<option value="${s.id}" ${s.id===state.booking.serviceId?'selected':''}>${s.name} (${s.duration_minutes} min)</option>`).join('')}</select></div>
+                  <div><label class="label">Data</label><input id="bookingDate" class="input" type="date" value="${state.booking.date}"></div>
+                  <div><label class="label">Horários disponíveis</label><div class="slots">${slots.map((sl) => `<button class="slot ${state.booking.slot === sl.start ? 'active' : ''}" data-slot="${sl.start}">${new Date(sl.start).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</button>`).join('') || '<div style="color:var(--muted);font-size:13px">Sem horários para esta data</div>'}</div></div>
+                </div>
+                <form id="bookingForm" class="stack">
+                  <div><label class="label">Seu nome</label><input class="input" name="name" value="${state.booking.name}" required></div>
+                  <div><label class="label">Seu e-mail</label><input class="input" name="email" type="email" value="${state.booking.email}" required></div>
+                  <button class="btn btn-primary" type="submit">Confirmar agendamento</button>
+                </form>
+              </div>
+            </div>
+          </section>
+        `;
+      }
+
+      function renderAuthenticated() {
+        const page = state.route === ROUTES.dashboard ? renderDashboard() : state.route === ROUTES.companies ? renderCompanies() : state.route === ROUTES.appointments ? renderAppointments() : renderBooking();
+        return `${renderSidebar()}<div class="main-col">${renderHeader()}<main class="main">${page}</main>${renderFooter()}</div>`;
+      }
+
+      function render() {
+        const root = byId('app');
+        root.innerHTML = state.auth.isAuthenticated
+          ? `<div class="auth-shell">${renderAuthenticated()}</div>`
+          : renderLogin();
+        bindEvents();
+      }
+
+      /* =============================== actions ========================= */
+      function login(email, password) {
+        if (!email || !password) return setAlert('error', 'Informe e-mail e senha.');
+        state.auth = { isAuthenticated: true, user: mockData.user };
+        state.route = ROUTES.dashboard;
+        clearAlert();
+        render();
+      }
+
+      function logout() {
+        state.auth = { isAuthenticated: false, user: null };
+        state.route = ROUTES.login;
+        state.editingAppointmentId = null;
+        setAlert('info', 'Sessão encerrada no preview.');
+        render();
+      }
+
+      function saveCompany(data) {
+        if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(data.slug)) return setAlert('error', 'Slug inválido: use letras minúsculas, números e hífens.');
+        const conflict = mockData.companies.find((c) => c.slug === data.slug && c.id !== data.id);
+        if (conflict) return setAlert('error', 'Slug já existe.');
+        if (data.id) {
+          const c = mockData.companies.find((x) => x.id === data.id);
+          Object.assign(c, data);
+          setAlert('success', 'Empresa atualizada com sucesso.');
+        } else {
+          const created = { ...data, id: uid('cmp') };
+          mockData.companies.push(created);
+          setAlert('success', 'Empresa criada com sucesso.');
+        }
+        state.companyForm = null;
+        render();
+      }
+
+      function createPublicBooking() {
+        const company = companyBySlug(state.booking.slug);
+        const service = serviceById(state.booking.serviceId);
+        if (!company || !service) return setAlert('error', 'Empresa/serviço inválidos.');
+        if (!state.booking.slot || !state.booking.name || !state.booking.email) return setAlert('error', 'Preencha nome, e-mail e escolha um horário.');
+        const start = state.booking.slot;
+        const end = new Date(new Date(start).getTime() + service.duration_minutes * 60000).toISOString();
+        if (overlaps(company.id, start, end)) return setAlert('error', 'Conflito: horário já reservado.');
+        mockData.appointments.push({ id: uid('apt'), company_id: company.id, service_id: service.id, customer_name: state.booking.name, customer_email: state.booking.email, scheduled_start: start, scheduled_end: end, status: 'pending', source: 'public', notes: '' });
+        setAlert('success', '🎉 Booking criado com sucesso! A agenda interna foi atualizada.');
+        state.booking.slot = '';
+        state.booking.name = '';
+        state.booking.email = '';
+        render();
+      }
+
+      /* ============================ event bindings ===================== */
+      function bindEvents() {
+        const loginForm = byId('loginForm');
+        if (loginForm) loginForm.onsubmit = (e) => { e.preventDefault(); const f = new FormData(loginForm); login(f.get('email'), f.get('password')); };
+
+        const logoutBtn = byId('logoutBtn');
+        if (logoutBtn) logoutBtn.onclick = logout;
+
+        document.querySelectorAll('[data-nav]').forEach((el) => el.onclick = (e) => { e.preventDefault(); state.route = el.dataset.nav; clearAlert(); render(); });
+        document.querySelectorAll('[data-open-booking]').forEach((el) => el.onclick = (e) => { e.preventDefault(); state.route = ROUTES.booking; state.booking.slug = el.dataset.openBooking; clearAlert(); render(); });
+
+        const activeSel = byId('activeCompanySelect');
+        if (activeSel) activeSel.onchange = () => { state.activeCompanyId = activeSel.value; state.booking.slug = activeCompany().slug; setAlert('info', `Tenant ativo alterado para ${activeCompany().name}.`); render(); };
+
+        const newCompanyBtn = byId('newCompanyBtn');
+        if (newCompanyBtn) newCompanyBtn.onclick = () => { state.companyForm = { id: '', name: '', slug: '', timezone: 'America/Sao_Paulo', status: 'active', logo_url: '' }; render(); };
+        document.querySelectorAll('[data-edit-company]').forEach((el) => el.onclick = () => { state.companyForm = { ...mockData.companies.find((c) => c.id === el.dataset.editCompany) }; render(); });
+        document.querySelectorAll('[data-set-active]').forEach((el) => el.onclick = () => { state.activeCompanyId = el.dataset.setActive; state.booking.slug = activeCompany().slug; setAlert('success', `Empresa ativa: ${activeCompany().name}`); render(); });
+        document.querySelectorAll('[data-toggle-status]').forEach((el) => el.onclick = () => {
+          const c = mockData.companies.find((x) => x.id === el.dataset.toggleStatus);
+          c.status = c.status === 'active' ? 'inactive' : 'active';
+          setAlert('success', `Status de ${c.name} alterado para ${c.status}.`);
+          render();
+        });
+
+        const companyForm = byId('companyForm');
+        if (companyForm) companyForm.onsubmit = (e) => { e.preventDefault(); const f = new FormData(companyForm); saveCompany({ id: f.get('id'), name: f.get('name').trim(), slug: f.get('slug').trim().toLowerCase(), timezone: f.get('timezone').trim(), status: f.get('status'), logo_url: f.get('logo_url').trim() }); };
+        const clearCompanyForm = byId('clearCompanyForm');
+        if (clearCompanyForm) clearCompanyForm.onclick = () => { state.companyForm = null; render(); };
+
+        document.querySelectorAll('[data-view]').forEach((el) => el.onclick = () => { state.appointmentsView = el.dataset.view; render(); });
+        const ad = byId('appointmentsDate');
+        if (ad) ad.onchange = () => { state.appointmentsDate = ad.value; render(); };
+        document.querySelectorAll('[data-apt-confirm]').forEach((el) => el.onclick = () => { const a = mockData.appointments.find((x) => x.id === el.dataset.aptConfirm); a.status = 'confirmed'; setAlert('success', 'Agendamento confirmado.'); render(); });
+        document.querySelectorAll('[data-apt-cancel]').forEach((el) => el.onclick = () => { const a = mockData.appointments.find((x) => x.id === el.dataset.aptCancel); a.status = 'cancelled'; setAlert('info', 'Agendamento cancelado.'); render(); });
+        document.querySelectorAll('[data-apt-edit]').forEach((el) => el.onclick = () => { state.editingAppointmentId = el.dataset.aptEdit; render(); });
+
+        const appointmentEditForm = byId('appointmentEditForm');
+        if (appointmentEditForm) appointmentEditForm.onsubmit = (e) => {
+          e.preventDefault();
+          const f = new FormData(appointmentEditForm);
+          const id = f.get('id');
+          const apt = mockData.appointments.find((a) => a.id === id);
+          const s = f.get('scheduled_start');
+          const en = f.get('scheduled_end');
+          if (new Date(s) >= new Date(en)) return setAlert('error', 'Fim deve ser após o início.');
+          if (overlaps(apt.company_id, s, en, apt.id)) return setAlert('error', 'Conflito com outro agendamento.');
+          apt.customer_name = f.get('customer_name'); apt.customer_email = f.get('customer_email'); apt.scheduled_start = s; apt.scheduled_end = en;
+          state.editingAppointmentId = null;
+          setAlert('success', 'Agendamento editado com sucesso.');
+          render();
+        };
+        const cancelEditApt = byId('cancelEditApt');
+        if (cancelEditApt) cancelEditApt.onclick = () => { state.editingAppointmentId = null; render(); };
+
+        const bookingSlug = byId('bookingSlug'); if (bookingSlug) bookingSlug.onchange = () => { state.booking.slug = bookingSlug.value; state.booking.serviceId = ''; state.booking.slot = ''; render(); };
+        const bookingService = byId('bookingService'); if (bookingService) bookingService.onchange = () => { state.booking.serviceId = bookingService.value; state.booking.slot = ''; render(); };
+        const bookingDate = byId('bookingDate'); if (bookingDate) bookingDate.onchange = () => { state.booking.date = bookingDate.value; state.booking.slot = ''; render(); };
+        document.querySelectorAll('[data-slot]').forEach((el) => el.onclick = () => { state.booking.slot = el.dataset.slot; render(); });
+
+        const bookingForm = byId('bookingForm');
+        if (bookingForm) bookingForm.onsubmit = (e) => { e.preventDefault(); const f = new FormData(bookingForm); state.booking.name = f.get('name'); state.booking.email = f.get('email'); createPublicBooking(); };
+      }
+
+      render();
+    </script>
+  </body>
+</html>

@@ -9,6 +9,8 @@ import {
   getPublicCompany,
   getPublicServices,
 } from '../../services/publicBookingService';
+import { Alert } from '../../components/ui/Alert';
+import { LoadingState } from '../../components/ui/LoadingState';
 
 function formatDateToInput(date = new Date()) {
   return date.toISOString().slice(0, 10);
@@ -146,7 +148,7 @@ export function PublicBookingPage() {
         scheduled_end: selectedSlot.scheduled_end,
       });
 
-      setSuccessMessage('Agendamento solicitado com sucesso! Em breve você receberá confirmação.');
+      setSuccessMessage('🎉 Agendamento solicitado com sucesso! Você receberá confirmação em breve.');
       setCustomerName('');
       setCustomerEmail('');
       setSelectedSlot(null);
@@ -166,112 +168,123 @@ export function PublicBookingPage() {
   };
 
   if (isLoading) {
-    return <section className="mx-auto max-w-4xl px-4 py-12 text-sm text-slate-500">Carregando...</section>;
+    return (
+      <section className="mx-auto max-w-5xl px-4 py-16">
+        <LoadingState label="Preparando seu agendamento..." />
+      </section>
+    );
   }
 
   return (
-    <section className="mx-auto max-w-4xl space-y-6 px-4 py-10">
-      <header className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-4">
-          <img
-            src={company?.logo_url || ICARUS_BRAND.defaultLogoUrl}
-            alt={company?.name || 'Logo da empresa'}
-            className="h-14 w-14 rounded object-cover"
-          />
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900">{company?.name || 'Empresa'}</h1>
-            <p className="text-sm text-slate-600">Selecione serviço, data e horário para agendar.</p>
-          </div>
-        </div>
-      </header>
-
-      <form onSubmit={handleSubmit} className="grid gap-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm md:grid-cols-2">
-        <div className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm text-slate-600">Serviço</label>
-            <select
-              value={selectedServiceId}
-              onChange={(event) => setSelectedServiceId(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            >
-              {services.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {service.name} ({service.duration_minutes} min)
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm text-slate-600">Data</label>
-            <Input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} required />
-          </div>
-
-          <div>
-            <p className="mb-2 text-sm text-slate-600">Horários disponíveis</p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {availability.map((slot) => {
-                const isActive = selectedSlot?.scheduled_start === slot.scheduled_start;
-
-                return (
-                  <button
-                    key={slot.scheduled_start}
-                    type="button"
-                    onClick={() => setSelectedSlot(slot)}
-                    className={`rounded border px-3 py-2 text-sm ${
-                      isActive
-                        ? 'border-blue-600 bg-blue-50 text-blue-700'
-                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    {formatSlot(slot.scheduled_start)}
-                  </button>
-                );
-              })}
-            </div>
-            {availability.length === 0 ? <p className="mt-2 text-xs text-slate-500">Sem horários para esta data.</p> : null}
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm text-slate-600">Seu nome</label>
-            <Input value={customerName} onChange={(event) => setCustomerName(event.target.value)} required />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm text-slate-600">Seu e-mail</label>
-            <Input
-              type="email"
-              value={customerEmail}
-              onChange={(event) => setCustomerEmail(event.target.value)}
-              required
+    <section className="bg-gradient-to-b from-slate-50 to-white">
+      <div className="mx-auto max-w-5xl space-y-6 px-4 py-10">
+        <header className="rounded-2xl bg-slate-900 p-7 text-white shadow-lg">
+          <div className="flex items-center gap-4">
+            <img
+              src={company?.logo_url || ICARUS_BRAND.defaultLogoUrl}
+              alt={company?.name || 'Logo da empresa'}
+              className="h-16 w-16 rounded bg-white object-cover p-1"
             />
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-300">Agendamento online</p>
+              <h1 className="text-3xl font-semibold">{company?.name || 'Empresa'}</h1>
+              <p className="mt-1 text-sm text-slate-300">Reserve seu horário em poucos passos.</p>
+            </div>
+          </div>
+        </header>
+
+        {errorMessage ? <Alert type="error">{errorMessage}</Alert> : null}
+        {successMessage ? <Alert type="success">{successMessage}</Alert> : null}
+
+        <form onSubmit={handleSubmit} className="grid gap-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:grid-cols-2">
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-slate-900">Escolha o serviço e horário</h2>
+
+            <div>
+              <label className="mb-1 block text-sm text-slate-600">Serviço</label>
+              <select
+                value={selectedServiceId}
+                onChange={(event) => setSelectedServiceId(event.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              >
+                {services.map((service) => (
+                  <option key={service.id} value={service.id}>
+                    {service.name} ({service.duration_minutes} min)
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm text-slate-600">Data</label>
+              <Input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} required />
+            </div>
+
+            <div>
+              <p className="mb-2 text-sm text-slate-600">Horários disponíveis</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {availability.map((slot) => {
+                  const isActive = selectedSlot?.scheduled_start === slot.scheduled_start;
+
+                  return (
+                    <button
+                      key={slot.scheduled_start}
+                      type="button"
+                      onClick={() => setSelectedSlot(slot)}
+                      className={`rounded-lg border px-3 py-2 text-sm font-medium ${
+                        isActive
+                          ? 'border-blue-600 bg-blue-50 text-blue-700'
+                          : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      {formatSlot(slot.scheduled_start)}
+                    </button>
+                  );
+                })}
+              </div>
+              {availability.length === 0 ? <p className="mt-2 text-xs text-slate-500">Sem horários para esta data.</p> : null}
+            </div>
           </div>
 
-          {selectedService ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-              <p>
-                <strong>Serviço:</strong> {selectedService.name}
-              </p>
-              <p>
-                <strong>Duração:</strong> {selectedService.duration_minutes} min
-              </p>
-              <p>
-                <strong>Horário:</strong>{' '}
-                {selectedSlot ? `${formatSlot(selectedSlot.scheduled_start)} (${selectedDate})` : 'Não selecionado'}
-              </p>
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-slate-900">Seus dados</h2>
+
+            <div>
+              <label className="mb-1 block text-sm text-slate-600">Seu nome</label>
+              <Input value={customerName} onChange={(event) => setCustomerName(event.target.value)} required />
             </div>
-          ) : null}
 
-          {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
-          {successMessage ? <p className="text-sm text-green-600">{successMessage}</p> : null}
+            <div>
+              <label className="mb-1 block text-sm text-slate-600">Seu e-mail</label>
+              <Input
+                type="email"
+                value={customerEmail}
+                onChange={(event) => setCustomerEmail(event.target.value)}
+                required
+              />
+            </div>
 
-          <Button type="submit" disabled={isSubmitting || !selectedService || !selectedSlot}>
-            {isSubmitting ? 'Confirmando...' : 'Confirmar agendamento'}
-          </Button>
-        </div>
-      </form>
+            {selectedService ? (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                <p>
+                  <strong>Serviço:</strong> {selectedService.name}
+                </p>
+                <p>
+                  <strong>Duração:</strong> {selectedService.duration_minutes} min
+                </p>
+                <p>
+                  <strong>Horário:</strong>{' '}
+                  {selectedSlot ? `${formatSlot(selectedSlot.scheduled_start)} (${selectedDate})` : 'Não selecionado'}
+                </p>
+              </div>
+            ) : null}
+
+            <Button type="submit" disabled={isSubmitting || !selectedService || !selectedSlot}>
+              {isSubmitting ? 'Confirmando...' : 'Confirmar agendamento'}
+            </Button>
+          </div>
+        </form>
+      </div>
     </section>
   );
 }
